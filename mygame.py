@@ -1,24 +1,24 @@
 import pygame
 import numpy as np
+#import matplotlib.pyplot as plt
 from math import sin, cos, tan
 from random import randint
+
 
 #PhysicsSetup
 A=([0.00501, 0.00464, -72.9,  -31.34],
    [-0.0857,  -0.545,   309,    -7.4],
    [0.00185,-0.00767,-0.395, 0.00132],
    [      0,       0,     1,       0])
-st=([0],[0],[0],[0])
+new=([0],[0],[0],[0])
 B=([5.63],[-23.8],[-4.51576],[0])
-t=0.02
-strength=0.02
+t=1/720
 control=0
-new=st
 
 
 #ScreenBgSetup
 ScreenX=1920
-ScreenY=500
+ScreenY=1020
 
 bg = pygame.image.load('bg.jpeg')
 bgY=bg.get_height()
@@ -68,6 +68,7 @@ dt = 0
 points=0
 font=pygame.font.SysFont("comicsansms",30)
 text=font.render(f'Score:{points}', True, 'black')
+inp=[]
 
 #GameLoop
 while running:
@@ -85,18 +86,23 @@ while running:
 
     #Control
     stab=True
-    if abs(control)<=4*dt:
-        keys = pygame.key.get_pressed()
+    keys = pygame.key.get_pressed()
+    if keys[pygame.K_UP] or keys[pygame.K_w]:
+            inp.append(1)
+    elif keys[pygame.K_DOWN]or keys[pygame.K_s]:
+            inp.append(-1)
+    else:inp.append(0)
+    if abs(control)<=72*dt:
         if keys[pygame.K_UP] or keys[pygame.K_w]:
-            control += 0.1 * dt
+            control += 1 * dt
             stab=False
         if keys[pygame.K_DOWN]or keys[pygame.K_s]:
-            control -= 0.1 * dt
+            control -= 1 * dt
             stab=False
     if control >0 and stab:
-        control-= 0.08*dt
+        control-= 0.8*dt
     elif control <0 and stab:
-        control+= 0.08*dt
+        control+= 0.8*dt
         
     #BackGround
     for i in range(tiles):
@@ -105,11 +111,12 @@ while running:
         scroll=0
         
     #ContolBar
+    barscale=ScreenY//5
     if control >0.003:
-        rect=pygame.Rect(player_pos.x//3, (ScreenY//2)-control*1500, player_pos.x//3,abs(control)*1500)
+        rect=pygame.Rect(player_pos.x//3, (ScreenY//2)-control*barscale, player_pos.x//3,abs(control)*barscale)
         pygame.draw.rect(screen,'green',rect)
     elif control <-0.003:
-        rect=pygame.Rect(player_pos.x//3, (ScreenY//2), player_pos.x//3,abs(control)*1500)
+        rect=pygame.Rect(player_pos.x//3, (ScreenY//2), player_pos.x//3,abs(control)*barscale)
         pygame.draw.rect(screen,'red',rect)
         
     #TargetPlacment
@@ -138,9 +145,9 @@ while running:
     RplayerX=Rplayer.get_width()
     RplayerY=Rplayer.get_height()
     if theta<0:
-        playerBox=pygame.Rect((player_pos.x+RplayerX//2,player_pos.y+playerY//4),(playerY*3,playerY//2))
+        playerBox=pygame.Rect((player_pos.x+RplayerX-playerY,player_pos.y+playerY//4),(playerY,playerY//2))
     else:
-        playerBox=pygame.Rect((player_pos.x+RplayerX//2,player_pos.y+RplayerY-playerY*3//4),(playerY*3,playerY//2))
+        playerBox=pygame.Rect((player_pos.x+RplayerX-playerY,player_pos.y+RplayerY-playerY*3//4),(playerY,playerY//2))
     #pygame.draw.rect(screen,'red',playerBox)
 
     #CollisionCheck
@@ -154,7 +161,7 @@ while running:
 
     #Explosion
     if Explosion:
-        if frame<50:
+        if frame<720:
             screen.blit(boom,boom_pos)
             boom=pygame.transform.smoothscale_by(boom,0.98)
             boomX*=0.98
@@ -172,6 +179,13 @@ while running:
 
     # limits FPS to 60
     # dt is delta time in seconds since last frame, used for framerate
-    dt = clock.tick(50) / 1000
+    dt = clock.tick(720) / 1000
 
 pygame.quit()
+g='''
+x = np.linspace(0,len(inp),len(inp))
+y = inp
+fig, ax = plt.subplots()
+ax.plot(x, y)
+plt.show()
+'''
