@@ -1,5 +1,7 @@
 import pygame
 import numpy as np
+from math import sin, cos, tan
+from random import randint
 
 #PhysicsSetup
 A=([0.00501, 0.00464, -72.9,  -31.34],
@@ -9,13 +11,15 @@ A=([0.00501, 0.00464, -72.9,  -31.34],
 st=([0],[0],[0],[0])
 B=([5.63],[-23.8],[-4.51576],[0])
 t=0.02
-strength=0.01
+strength=0.02
 control=0
-x,new=st,st
+new=st
+
 
 #ScreenBgSetup
 ScreenX=1920
-ScreenY=1000
+ScreenY=500
+
 bg = pygame.image.load('bg.jpeg')
 bgY=bg.get_height()
 bgRatio=ScreenY/bgY
@@ -29,18 +33,41 @@ tiles=2+(ScreenX//bgX)
 player = pygame.image.load('playa.png')
 playerX=player.get_width()
 playerY=player.get_height()
-player=pygame.transform.scale(player,(1*(playerX//playerY)*(bgY//20),bgY//20))
+player=pygame.transform.smoothscale(player, (1*(playerX//playerY)*(bgY//20),bgY//20))
 playerX=player.get_width()
 playerY=player.get_height()
-player_pos = pygame.Vector2((ScreenX//11)-(playerX//2), (ScreenY//3)-(playerY//2))
+player_pos = pygame.Vector2((ScreenX//10)-(playerX//2), (ScreenY//3)-(playerY//2))
+
+#TargetSetup
+target=pygame.image.load('target.png')
+targetX=target.get_width()
+targetY=target.get_height()
+target=pygame.transform.smoothscale(target, (1*(targetX/targetY)*(bgY//10),bgY//10))
+targetX=target.get_width()
+targetY=target.get_height()
+Hit=True
+tScroll=0
+boom_pos=pygame.math.Vector2()
+
+#BoomSetup
+boomog=pygame.image.load('boom.png')
+boom=pygame.transform.smoothscale(boomog,((bgY//9),bgY//9))
+boomX=bgY//9
+boomY=boomX
+frame=0
+Explosion=False
 
 #PygameSetup
 pygame.init()
+pygame.font.init()
 screen = pygame.display.set_mode((ScreenX, ScreenY))
 pygame.display.set_caption('2D Flight Sim')
 clock = pygame.time.Clock()
 running = True
 dt = 0
+points=0
+font=pygame.font.SysFont("comicsansms",30)
+text=font.render(f'Score:{points}', True, 'black')
 
 #GameLoop
 while running:
@@ -49,45 +76,98 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
+    #Physics
+    n=np.dot(A,new)+np.dot(control,B)
+    new=(np.add(new,np.dot(t,n)))
+    u=new[0][-1]
+    w=new[1][-1]
+    theta=new[3][-1]
+
+    #Control
+    stab=True
+    if abs(control)<=4*dt:
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_UP] or keys[pygame.K_w]:
+            control += 0.1 * dt
+            stab=False
+        if keys[pygame.K_DOWN]or keys[pygame.K_s]:
+            control -= 0.1 * dt
+            stab=False
+    if control >0 and stab:
+        control-= 0.08*dt
+    elif control <0 and stab:
+        control+= 0.08*dt
+        
     #BackGround
     for i in range(tiles):
         screen.blit(bg,(i*bgX-scroll,0))
     if scroll>=bgX:
         scroll=0
-
-    #Physics
-    n=np.dot(A,new)+np.dot(control,B)
-    new=(np.add(new,np.dot(t,n)))
-    for i in range(len(x)):
-        x[i].append(new[i][-1])
-
-    #Control
-    keys = pygame.key.get_pressed()
-    if keys[pygame.K_UP] or keys[pygame.K_w]:
-        control += 0.1 * dt
-    if keys[pygame.K_DOWN]or keys[pygame.K_s]:
-        control -= 0.1 * dt
-    if control >0:
-        control-= 0.05*dt
-    elif control <0:
-        control+= 0.05*dt
         
     #ContolBar
-    if control >0.001:
-        rect=pygame.Rect(5, (ScreenY//2)-control*1500, 20,abs(control)*1500)
+    if control >0.003:
+        rect=pygame.Rect(player_pos.x//3, (ScreenY//2)-control*1500, player_pos.x//3,abs(control)*1500)
         pygame.draw.rect(screen,'green',rect)
-    elif control <-0.001:
-        rect=pygame.Rect(5, (ScreenY//2), 20,abs(control)*1500)
+    elif control <-0.003:
+        rect=pygame.Rect(player_pos.x//3, (ScreenY//2), player_pos.x//3,abs(control)*1500)
         pygame.draw.rect(screen,'red',rect)
+        
+    #TargetPlacment
+    if Hit:
+        tLoc=randint(2,8)
+        Hit=False
+        tScroll=0
+    target_pos=(ScreenX-tScroll, (ScreenY*tLoc)//10-(playerY//2))
+    screen.blit(target,target_pos)
+    if tScroll>=ScreenX:
+        tScroll=0
+        Hit=True
+    targetBox=pygame.Rect((target_pos),(targetX,targetY))
+    #pygame.draw.rect(screen,'red',targetBox)
 
     #LocationUpdates
-    player_pos.y += x[1][-1]*dt
-    scroll+=(x[0][-1]+309)*dt
-    Rplayer=pygame.transform.rotate(player,x[3][-1]*-50)
+    player_pos.y += ((u+A[1][2])*sin(theta)+w*cos(theta))*dt
+    hv=((u+A[1][2])*cos(theta)+w*sin(theta))
+    scroll+=hv*dt
+    tScroll+=hv*dt*0.6
+    boom_pos.x-=hv*dt*0.8
+    Rplayer=pygame.transform.rotate(player,theta*-57)
     screen.blit(Rplayer,player_pos)
+
+    #PlayerHitbox
+    RplayerX=Rplayer.get_width()
+    RplayerY=Rplayer.get_height()
+    if theta<0:
+        playerBox=pygame.Rect((player_pos.x+RplayerX//2,player_pos.y+playerY//4),(playerY*3,playerY//2))
+    else:
+        playerBox=pygame.Rect((player_pos.x+RplayerX//2,player_pos.y+RplayerY-playerY*3//4),(playerY*3,playerY//2))
+    #pygame.draw.rect(screen,'red',playerBox)
+
+    #CollisionCheck
+    if targetBox.colliderect(playerBox):
+        points+=1
+        Hit=True
+        Explosion=True
+        boom_pos=pygame.math.Vector2(target_pos)
+        text=font.render(f'Score:{points}', True, 'black')
+    screen.blit((text),(11*ScreenX//12,5))
+
+    #Explosion
+    if Explosion:
+        if frame<50:
+            screen.blit(boom,boom_pos)
+            boom=pygame.transform.smoothscale_by(boom,0.98)
+            boomX*=0.98
+            boom_pos.y+=boomX//100
+            frame+=1
+        else:
+            boom=pygame.transform.smoothscale(boomog,(bgY//9,bgY//9))
+            boomX=bgY//9
+            frame=0
+            Explosion=False
         
     #Render
-    if player_pos.y>0 and player_pos.y<ScreenY:
+    if player_pos.y>0 and player_pos.y+RplayerY<ScreenY:
         pygame.display.flip()
 
     # limits FPS to 60
