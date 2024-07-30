@@ -1,3 +1,6 @@
+#150 pop was good
+
+
 import pygame, neat
 import numpy as np
 from math import sin, cos, tan
@@ -174,8 +177,8 @@ def main(genomes, config):
                 run=False 
                 pygame.quit()
                 quit()
-        if cc>20:
-            for j in range((len(players)*4//5)):
+        if cc>12:
+            for j in range((len(players)//2)):
                 mini=9999
                 for i in range(len(players)):
                     if ge[i].fitness<mini:
@@ -186,20 +189,22 @@ def main(genomes, config):
                 ge.pop(i)
                 players.pop(i)
             cc=0
-        if len(players)<10:
+        if len(players)<3:
             pygame.quit()
             break
                 
         tgs=target.move(tgs)
         for x,player in enumerate(players):
             player.move()
-            output=nets[x].activate(((player.y+player.RplayerY/2)-(target.y+TARGETHEIGHT/2),player.vv,target.x))
-            #output=nets[x].activate(((player.y+PLAYERHEIGHT/2)-(target.y+TARGETHEIGHT/2),player.vv,sin(player.tilt)))
+            #output=nets[x].activate(((player.y+player.RplayerY/2)-(target.y+TARGETHEIGHT/2),player.vv,target.x))
+            output=nets[x].activate(((player.y+player.RplayerY/2)-(target.y+TARGETHEIGHT/2),player.vv,sin(player.tilt)))
             player.MLIN(output[0])
 
             e,colls[x]=target.collide(player,colls[x])
             if e:
                 ge[x].fitness+=FPS*5
+            if player.y+player.RplayerY/2>target.y+TARGETHEIGHT and player.y+player.RplayerY/2<target.y:
+                ge[x].fitness+=FPS/3
             if player.y>WIN_HEIGHT or player.y<0:
                 ge[x].fitness-=FPS
                 nets.pop(x)
@@ -209,7 +214,7 @@ def main(genomes, config):
                 #ge[x].fitness+=1*0.009**(abs(player.y+PLAYERHEIGHT/2)-(target.y+TARGETHEIGHT/2)/WIN_HEIGHT)
         
         #bg.move()
-        draw_win(win,players,target,bg,colls)
+        #draw_win(win,players,target,bg,colls)
 
     pygame.quit()
 
@@ -227,7 +232,7 @@ def run(config_path):
     p.add_reporter(stats)
 
     global winner
-    winner = p.run(main, 15)
+    winner = p.run(main, 5)
 
     print('\nBest genome:\n{!s}'.format(winner))
     #print(winner)
@@ -280,20 +285,3 @@ while run:
     pygame.display.update()
 pygame.quit()
 print(winner)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
