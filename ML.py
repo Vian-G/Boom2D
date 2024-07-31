@@ -197,7 +197,7 @@ def main(genomes, config):
         for x,player in enumerate(players):
             player.move()
             #output=nets[x].activate(((player.y+player.RplayerY/2)-(target.y+TARGETHEIGHT/2),player.vv,target.x))
-            output=nets[x].activate(((player.y+player.RplayerY/2)-(target.y+TARGETHEIGHT/2),player.vv,sin(player.tilt)))
+            output=nets[x].activate(((player.y-player.RplayerY/2)-(target.y-TARGETHEIGHT/2),player.vv,sin(player.theta)))
             player.MLIN(output[0])
 
             e,colls[x]=target.collide(player,colls[x])
@@ -267,7 +267,7 @@ while run:
             pygame.quit()
             quit()
     player.move()
-    output=net.activate(((player.y+PLAYERHEIGHT/2)-(target.y+TARGETHEIGHT/2),player.vv,sin(player.tilt)))
+    output=net.activate(((player.y-player.RplayerY/2)-(target.y-TARGETHEIGHT/2),player.vv,sin(player.theta)))
     player.MLIN(output[0])
     tgs=target.move(tgs)
     bg.move()
