@@ -48,7 +48,7 @@ class Player:
         self.control=0
         self.new=([0],[0],[0],[0])
         self.playerBox=pygame.Rect((self.x,self.y),(self.playerY,self.playerY//2))
-        self.RplayerY=self.playerY
+        self.rplayerY=self.playerY
 
     def MLIN(self,MLIN):
         self.control=MLIN/5
@@ -74,11 +74,11 @@ class Player:
 
     def get_mask(self):
         RplayerX=self.rotated_image.get_width()
-        self.RplayerY=self.rotated_image.get_height()
+        self.rplayerY=self.rotated_image.get_height()
         if self.theta<0:
             self.playerBox=pygame.Rect((self.x+RplayerX-self.playerY,self.y+self.playerY//4),(self.playerY,self.playerY//2))
         else:
-            self.playerBox=pygame.Rect((self.x+RplayerX-self.playerY,self.y+self.RplayerY-self.playerY*3//4),(self.playerY,self.playerY//2))
+            self.playerBox=pygame.Rect((self.x+RplayerX-self.playerY,self.y+self.rplayerY-self.playerY*3//4),(self.playerY,self.playerY//2))
         return self.playerBox
 
 class Target:
@@ -196,14 +196,14 @@ def main(genomes, config):
         tgs=target.move(tgs)
         for x,player in enumerate(players):
             player.move()
-            #output=nets[x].activate(((player.y+player.RplayerY/2)-(target.y+TARGETHEIGHT/2),player.vv,target.x))
-            output=nets[x].activate(((player.y-player.RplayerY/2)-(target.y-TARGETHEIGHT/2),player.vv,sin(player.theta)))
+            #output=nets[x].activate(((player.y+player.rplayerY/2)-(target.y+TARGETHEIGHT/2),player.vv,target.x))
+            output=nets[x].activate(((player.y-player.rplayerY/2)-(target.y-TARGETHEIGHT/2),player.vv,sin(player.theta)))
             player.MLIN(output[0])
 
             e,colls[x]=target.collide(player,colls[x])
             if e:
                 ge[x].fitness+=FPS*5
-            if player.y+player.RplayerY/2>target.y+TARGETHEIGHT and player.y+player.RplayerY/2<target.y:
+            if player.y+player.rplayerY/2>target.y+TARGETHEIGHT and player.y+player.rplayerY/2<target.y:
                 ge[x].fitness+=FPS/3
             if player.y>WIN_HEIGHT or player.y<0:
                 ge[x].fitness-=FPS
@@ -267,7 +267,7 @@ while run:
             pygame.quit()
             quit()
     player.move()
-    output=net.activate(((player.y-player.RplayerY/2)-(target.y-TARGETHEIGHT/2),player.vv,sin(player.theta)))
+    output=net.activate(((player.y-player.rplayerY/2)-(target.y-TARGETHEIGHT/2),player.vv,sin(player.theta)))
     player.MLIN(output[0])
     tgs=target.move(tgs)
     bg.move()
